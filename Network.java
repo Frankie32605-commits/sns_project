@@ -1,21 +1,20 @@
-import adts.graph;
-import adts.sorts;
+import adts.Graph;
+import adts.Sorts;
 import java.util.*;
 
-public class Network {
+public class sns_network {
     //Using an Adjacency List representation for the social network graph
     //The "Database" of all users in the network
-    //private Map<String, Set<String>> networkGraph;
     private final Map<String, User> users = new HashMap<>();
     private final Graph<String> graph = new Graph<>();
 
     //Constructor
-    public Network() {
+    public sns_network() {
         this.networkGraph = new HashMap<>();
     }
-
+//we should rename the file to Network.java. The AI keeps bugging me about it.
     public static void main(String[] args) {
-        Network network = new Network();
+        sns_network = new sns_network();
         
         //Example usage
         network.addFriend("Alice", "Bob");
