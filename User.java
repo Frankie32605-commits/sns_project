@@ -28,10 +28,6 @@ public class User {
     }
 
     //Required for HashSet<User> to work, and prevents bugs
-    @Override
-    public String toString(){
-        return id;
-    }
 
     @Override
     public boolean equals(Object o){
@@ -44,5 +40,10 @@ public class User {
     @Override
     public int hashCode(){
         return id.hashCode();
+    }
+
+    @Override
+    public String toString(){
+        return id;
     }
 }

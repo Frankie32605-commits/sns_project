@@ -1,5 +1,5 @@
-import adts.graph;
-import adts.sorts;
+import adts.Graph;
+import adts.Sorts;
 import java.util.*;
 
 public class Network {
@@ -8,27 +8,6 @@ public class Network {
     //private Map<String, Set<String>> networkGraph;
     private final Map<String, User> users = new HashMap<>();
     private final Graph<String> graph = new Graph<>();
-
-    //Constructor
-    public Network() {
-        this.networkGraph = new HashMap<>();
-    }
-
-    public static void main(String[] args) {
-        Network network = new Network();
-        
-        //Example usage
-        network.addFriend("Alice", "Bob");
-        network.addFriend("Alice", "Charlie");
-        network.displayNetwork();
-
-        // Example Sorting
-        System.out.println("Top Influencers: ");
-        List<User> sorted = network.userFollowerSort(/* Pass user data here */);
-        for (User u : sorted) {
-            System.out.println(u.username + " with " + network.getFriends(u.username).size() + " friends.");
-        }
-    }
 
     //Add a user to the network
 
@@ -147,5 +126,9 @@ public class Network {
             }
         }
         return false;
+    }
+
+    public List<String> shortestPath(String a, String b){
+        return graph.bfs(a, b);
     }
 }   
