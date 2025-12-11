@@ -36,6 +36,6 @@ public class Main {
                 case "news" -> CommandHandler.handleNews(network, parts); 
                 default -> System.out.println("Unknown command"); 
             }
-        } 
+        }  
     }
 }
