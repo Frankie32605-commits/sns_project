@@ -1,3 +1,4 @@
+package model;
 import adts.AVLTree;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,4 +47,5 @@ public class User {
     public String toString(){
         return id;
     }
+
 }

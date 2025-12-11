@@ -1,13 +1,15 @@
+package model;
 import adts.Graph;
 import adts.Sorts;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Network {
     //Using an Adjacency List representation for the social network graph
     //The "Database" of all users in the network
     //private Map<String, Set<String>> networkGraph;
     private final Map<String, User> users = new HashMap<>();
-    private final Graph<String> graph = new Graph<>();
+    private final adts.Graph<String> graph = new Graph<>();
 
     //Add a user to the network
 
@@ -23,6 +25,10 @@ public class Network {
         //Add mutual connection
         userA.addFriend(userB);
         userB.addFriend(userA);
+    }
+
+    public void addPost(String name, String content){
+        addUser(name).addPost(new Post(addUser(name), content));
     }
 
     //Get friends List of a user
