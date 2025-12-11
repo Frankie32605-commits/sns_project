@@ -1,37 +1,47 @@
 package model;
+
 import adts.Graph;
 import adts.Sorts;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class Network {
-    //Using an Adjacency List representation for the social network graph
-    //The "Database" of all users in the network
-    //private Map<String, Set<String>> networkGraph;
+    
+    // The "Database" of all users
     private final Map<String, User> users = new HashMap<>();
+    
+    // The Graph ADT, now supporting weighted edges
     private final adts.Graph<String> graph = new Graph<>();
 
-    //Add a user to the network
-
+    // Add a user to the network
     public User addUser(String username) {
+        // Ensures the user exists in both the map and the graph
+        graph.addVertex(username); 
         return users.computeIfAbsent(username, User::new);
     }
-    //Add a friendship (edge) between two users
+    
+    /**
+     * Adds a friendship (edge) between two users.
+     * Note: We are setting a default weight of 1 for a new friendship.
+     */
     public void addFriendship(String a, String b){
         User userA = addUser(a);
         User userB = addUser(b);
-        graph.addEdge(a, b, 1); //undirected edge
+        
+        // Add edge to the Graph ADT (default weight 1)
+        graph.addEdge(a, b, 1); 
 
-        //Add mutual connection
+        // Add mutual connection to the User objects
         userA.addFriend(userB);
         userB.addFriend(userA);
     }
 
     public void addPost(String name, String content){
+        // Ensure user exists before trying to add a post
         addUser(name).addPost(new Post(addUser(name), content));
     }
 
-    //Get friends List of a user
+    // Get friends List of a user
     public Set<User> getFriends(String username) {
         User user = users.get(username);
         if(user == null) return Set.of();
@@ -42,15 +52,11 @@ public class Network {
         Set<User> friendsA = getFriends(userA);
         Set<User> friendsB = getFriends(userB);
 
-        //Create a copy of the first set to retain only mutual friends
         Set<User> mutualFriends = new HashSet<>(friendsA);
-
-        // Keep only elements that appear in both sets (Intersection)
         mutualFriends.retainAll(friendsB);
         return mutualFriends;
     }
 
-    //Display the entire network (Debugging helper)
     public void displayNetwork() {
         System.out.println("--- Current Social Network ---");
         for (User u : users.values()) {
@@ -59,24 +65,38 @@ public class Network {
             System.out.println("]");
         }
         System.out.println("-----------------------------------");
-}
+    }
 
-    //Arranges users by their follower count
+    // Arranges users by their follower count (HeapSort implementation)
     public List<User> getUsersSortedByFollowers(){ 
-        //This method ranks the users by the amount of friends/followers they have
         List<User> list = new ArrayList<>(users.values());
+        // Sort descending by friend count (using negative value to simulate max-heap for descending order)
         Sorts.heapSort(list, Comparator.comparingInt(u -> -u.getFriendCount()));
         return list;
     }
 
-    //Arranges users by their activity (number of posts)
+    // Arranges users by their activity (number of posts) (HeapSort implementation)
     public List<User> getUsersSortedByActivity(int limit){
         List<User> allUsers = new ArrayList<>(users.values());
 
-        //descending by number of posts
+        // Sort descending by number of posts
         Sorts.heapSort(allUsers, Comparator.comparingInt(u -> -u.postCount));
         return limit <= 0 ? allUsers : allUsers.subList(0, Math.min(limit, allUsers.size()));
     }
+    
+    /**
+     * Ranks users by their weighted closeness (shortest path weight) to the start user.
+     * @param startUser The user to rank from.
+     * @return A map of User ID to their minimum weighted distance.
+     */
+    public Map<String, Integer> getClosenessRankings(String startUser) {
+        if (!users.containsKey(startUser)) {
+            return Map.of();
+        }
+        // Call the new Dijkstra's method on the Graph ADT
+        return graph.dijkstra(startUser);
+    }
+
 
     public User getUser(String username){
         return users.get(username);
@@ -88,7 +108,7 @@ public class Network {
 
     /**
      * Public entry method to check if a friendship cycle exists anywhere in the network.
-     * Starts DFS from every unvisited user to handle disconnected graphs.
+     * Uses the recursive DFS approach, which is correct for undirected graphs.
      * @return true if a cycle is found, false otherwise.
      */
     public boolean hasFriendshipCycle() {
@@ -106,14 +126,13 @@ public class Network {
     }
 
     /**
-     * Helper method using Recursive Depth-First Search (DFS) to detect a cycle.
+     * Helper method using Recursive Depth-First Search (DFS) to detect a cycle in an UNDIRECTED graph.
      * @param current The user currently being visited.
-     * @param parent The user that led to the current user (to ignore back-edges).
+     * @param parent The user that led to the current user (to ignore the trivial back-edge).
      * @param visited The set of users already visited.
      * @return true if a cycle is detected, false otherwise.
      */
     private boolean dfsFindCycle(User current, User parent, Set<User> visited) {
-        // Mark the current node as visited
         visited.add(current);
 
         // Check all friends (neighbors) of the current user
@@ -124,8 +143,8 @@ public class Network {
                     return true;
                 }
             } 
+            // Case 2: Neighbor is visited AND is NOT the direct parent.
             else if (parent != null && !neighbor.equals(parent)) {
-                // Case 2: Neighbor is visited AND is NOT the direct parent.
                 // This means we found a path back to an ancestor, which forms a cycle.
                 System.out.println("Cycle detected involving users: " + current.id + " and " + neighbor.id);
                 return true;
@@ -135,6 +154,7 @@ public class Network {
     }
 
     public List<String> shortestPath(String a, String b){
+        // Uses the unweighted BFS in Graph.java
         return graph.bfs(a, b);
     }
-}   
+}

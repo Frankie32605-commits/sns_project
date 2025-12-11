@@ -1,5 +1,4 @@
 package api;
-
 import model.Network;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -7,17 +6,17 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+//import com.google.gson.Gson;
 
 /**
- * Interface for World News API[](https://worldnewsapi.com/)
+ * Interface for World News API (https://worldnewsapi.com/)
  * Fetches news headlines by topic and posts them to the social network.
- * Free tier: 100 requests/day; requires X-API-KEY header.
+ * Note: Assumes Gson library is available in the classpath.
  */
 public class API_Interface {
     private static final String BASE_URL = "https://api.worldnewsapi.com/search-news";
     private static final String API_KEY = "3fdae895d43d4be687bd86d50b4286b0";
+    private static final Gson GSON = new Gson();
 
     /**
      * Fetches news articles for a topic and posts them to the network.
@@ -25,13 +24,17 @@ public class API_Interface {
      * @param topic Search query (e.g., "technology", "Elon Musk").
      */
     public static void fetchNewsAndPost(Network network, String topic) {
-        // Synchronous fetch for simplicity (non-blocking in CLI context)
         try {
-            List<String> articles = fetchArticles(topic);
-            for (String article : articles) {
-                // Clean source name and post
-                String cleanSource = cleanSourceName(article);
-                network.addPost(cleanSource, extractHeadline(article));
+            List<NewsArticle> articles = fetchArticles(topic);
+            
+            if (articles.isEmpty()) {
+                System.out.println("No news found for topic: '" + topic + "'");
+                return;
+            }
+            
+            for (NewsArticle article : articles) {
+                String cleanSource = cleanSourceName(article.source);
+                network.addPost(cleanSource, article.title); // Use cleaned source as "user"
             }
             System.out.println("Posted " + articles.size() + " news articles from World News API!");
         } catch (Exception e) {
@@ -40,15 +43,14 @@ public class API_Interface {
     }
 
     /**
-     * Synchronous fetch for testing/JUnit.
+     * Synchronous fetch that uses Gson for robust JSON parsing.
      * @param topic Search query.
-     * @return List of raw article strings (title + source).
+     * @return List of parsed NewsArticle objects.
      * @throws Exception on API/network errors.
      */
-    public static List<String> fetchArticles(String topic) throws Exception {
-        List<String> articles = new ArrayList<>();
+    public static List<NewsArticle> fetchArticles(String topic) throws Exception {
         URL url = new URL(BASE_URL + "?text=" + java.net.URLEncoder.encode(topic, "UTF-8") + 
-                          "&language=en&number=5");  // 5 articles for free tier
+                             "&language=en&number=5");
 
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
@@ -57,7 +59,15 @@ public class API_Interface {
 
         int responseCode = conn.getResponseCode();
         if (responseCode != 200) {
-            throw new Exception("API error: " + responseCode);
+            // Read error stream if available
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+            String errorLine;
+            StringBuilder errorResponse = new StringBuilder();
+            while ((errorLine = errorReader.readLine()) != null) {
+                errorResponse.append(errorLine);
+            }
+            errorReader.close();
+            throw new Exception("API error: HTTP " + responseCode + ". Response: " + errorResponse.toString());
         }
 
         BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -68,58 +78,35 @@ public class API_Interface {
         }
         in.close();
 
-        // Simple JSON parsing for articles array
-        String json = response.toString();
-        // Find "articles": [ ... ] section
-        int start = json.indexOf("\"articles\":[");
-        if (start == -1) throw new Exception("Invalid JSON response");
-
-        start += "\"articles\":[\"".length();
-        int end = json.indexOf("]", start);
-        String articlesJson = json.substring(start, end);
-
-        // Extract up to 5 articles (title and source)
-        Pattern articlePattern = Pattern.compile("\"title\":\"([^\"]+)\".*?\"source\":\"([^\"]+)\"");
-        Matcher matcher = articlePattern.matcher(articlesJson);
-        while (matcher.find() && articles.size() < 5) {
-            String title = matcher.group(1);
-            String source = matcher.group(2);
-            articles.add("Title: " + title + " | Source: " + source);
-        }
-
-        return articles;
+        NewsResponse newsResponse = GSON.fromJson(response.toString(), NewsResponse.class);
+        
+        // Return a sublist of the articles array
+        return newsResponse.news != null ? List.of(newsResponse.news) : List.of();
     }
 
     /**
      * Cleans source names (e.g., "Reuters via Yahoo" → "Reuters").
-     * @param article Raw article string.
+     * @param sourceName The raw source name string.
      * @return Cleaned source name.
      */
-    private static String cleanSourceName(String article) {
-        Pattern viaPattern = Pattern.compile("Source: ([^|]+)(?: via .+)?");
-        Matcher matcher = viaPattern.matcher(article);
-        if (matcher.find()) {
-            String source = matcher.group(1).trim();
-            // Additional cleaning
-            if (source.startsWith("AP")) source = "AP News";
-            if (source.startsWith("BBC")) source = "BBC";
-            if (source.startsWith("CNN")) source = "CNN";
-            return source;
+    private static String cleanSourceName(String sourceName) {
+        if (sourceName == null || sourceName.trim().isEmpty()) {
+            return "WorldNews";
         }
-        return "WorldNews";
-    }
-
-    /**
-     * Extracts headline from article string.
-     * @param article Raw article string.
-     * @return Headline text.
-     */
-    private static String extractHeadline(String article) {
-        Pattern titlePattern = Pattern.compile("Title: ([^|]+)");
-        Matcher matcher = titlePattern.matcher(article);
-        if (matcher.find()) {
-            return matcher.group(1).trim();
+        
+        // Remove " via XXX" suffixes
+        int viaIndex = sourceName.indexOf(" via ");
+        if (viaIndex != -1) {
+            sourceName = sourceName.substring(0, viaIndex).trim();
         }
-        return "Breaking news";
+        
+        // Additional Cleaning/Normalization (as per original logic)
+        if (sourceName.startsWith("AP")) return "AP News";
+        if (sourceName.startsWith("BBC")) return "BBC";
+        if (sourceName.startsWith("CNN")) return "CNN";
+        
+        return sourceName;
     }
+    
+    // The previous extractHeadline method is no longer needed as the title is directly parsed.
 }
