@@ -30,7 +30,8 @@ public class Main {
                     if (parts.length > 1) {
                         network.addUser(parts[1]);
                         System.out.println("User '" + parts[1] + "' added.");
-                    } else {
+                    } 
+                    else {
                         System.out.println("Usage: user <name>");
                     }
                 }
@@ -63,7 +64,8 @@ public class Main {
                         System.out.println(path.isEmpty() 
                             ? "No path found between " + parts[1] + " and " + parts[2]
                             : "Shortest path: " + String.join(" -> ", path));
-                    } else {
+                    } 
+                    else {
                         System.out.println("Usage: path <userA> <userB>");
                     }
                 }

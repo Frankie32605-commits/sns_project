@@ -31,9 +31,10 @@ public class CommandHandler {
             System.out.println("\n--- Top Influencers (Ranked by Friends) ---");
             int r = 1;
             for (User u : n.getUsersSortedByFollowers()) {
-                System.out.printf("%2d. %s → %d friends%n", r++, u.id, u.getFriendCount());
+                System.out.printf("%2d. %s -> %d friends%n", r++, u.id, u.getFriendCount());
             }
-        } else if ("active".equalsIgnoreCase(p[1])) {
+        } 
+        else if ("active".equalsIgnoreCase(p[1])) {
             int lim;
             try {
                 lim = p.length > 2 ? Integer.parseInt(p[2]) : 10;
@@ -45,9 +46,10 @@ public class CommandHandler {
             System.out.printf("\n--- Most Active Users (Top %d) ---%n", lim);
             int r = 1;
             for (User u : n.getUsersSortedByActivity(lim)) {
-                System.out.printf("%2d. %s → %d posts%n", r++, u.id, u.postCount);
+                System.out.printf("%2d. %s -> %d posts%n", r++, u.id, u.postCount);
             }
-        } else {
+        } 
+        else {
             System.out.println("Unknown rank type. Use 'followers' or 'active'.");
         }
     }
