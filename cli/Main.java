@@ -2,6 +2,7 @@ package cli;
 
 import model.Network;
 import java.util.Scanner;
+import model.User;
 
 public class Main {
     public static void main(String[] args) {
@@ -37,14 +38,33 @@ public class Main {
                 }
 
                 case "friend" -> {
-                    if (parts.length > 2) {
-                        network.addFriendship(parts[1], parts[2]);
-                        System.out.println(parts[1] + " and " + parts[2] + " are now friends!");
-                    } 
-                    else {
-                        System.out.println("Usage: friend <userA> <userB>");
+                    if (parts.length < 3) {
+                    System.out.println("Usage: friend <userA> <userB>");
+                    return;
                     }
+
+                    String userA = parts[1];
+                    String userB = parts[2];
+
+                    User ua = network.getUser(userA);
+                    User ub = network.getUser(userB);
+
+                    // If either user doesn't exist, add them automatically (as before)
+                    if (ua == null || ub == null) {
+                        network.addFriendship(userA, userB);
+                        System.out.println(userA + " and " + userB + " are now friends!");
+                        return;
+                    }
+
+                // Check if they are already friends
+                if (ua.getFriendCount() > 0 && ua.friends.contains(ub)) {
+                    System.out.println(userA + " and " + userB + " are already friends!");
+                } 
+                else {
+                    network.addFriendship(userA, userB);
+                    System.out.println(userA + " and " + userB + " are now friends!");
                 }
+}
 
                 case "post" -> {
                     if (parts.length > 2) {
